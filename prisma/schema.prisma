@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  isArtist    Boolean  @default(false)
+  bio         String?
+  location    String?
+  avatarUrl   String?
+  portfolio   Portfolio?
+  bookings    Booking[] @relation("UserBookings")
+  artistBookings Booking[] @relation("ArtistBookings")
+  reviews     Review[] @relation("UserReviews")
+  artistReviews Review[] @relation("ArtistReviews")
+  createdAt   DateTime @default(now())
+}
+
+model Portfolio {
+  id        String     @id @default(cuid())
+  artistId  String     @unique
+  artist    User       @relation(fields: [artistId], references: [id])
+  images    TattooImage[]
+  styles    String[]   // e.g., ["realism", "traditional", "minimalist"]
+  about     String?
+}
+
+model TattooImage {
+  id          String   @id @default(cuid())
+  url         String
+  caption     String?
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  userId     String
+  artistId   String
+  date       DateTime
+  status     String   // e.g., pending, confirmed, completed
+  note       String?
+  user       User     @relation("UserBookings", fields: [userId], references: [id])
+  artist     User     @relation("ArtistBookings", fields: [artistId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  artistId  String
+  rating    Int      
+  comment   String?
+  createdAt DateTime @default(now())
+  user      User     @relation("UserReviews", fields: [userId], references: [id])
+  artist    User     @relation("ArtistReviews", fields: [artistId], references: [id])
+}
