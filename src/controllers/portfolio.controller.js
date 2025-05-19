@@ -243,10 +243,218 @@ const deleteImageFromPortfolio = async (req, res) => {
   }
 };
 
+/**
+ * Add image to the authenticated user's portfolio
+ */
+const addMyPortfolioImage = async (req, res) => {
+  try {
+    console.log('Starting addMyPortfolioImage');
+    console.log('User:', req.user);
+    console.log('Request headers:', req.headers);
+    console.log('Request file:', req.file);
+    console.log('Request body:', req.body);
+    
+    const artistId = req.user.id;
+    const { caption } = req.body;
+    
+    // Ensure we have an uploaded file
+    if (!req.file) {
+      console.error('No file in request: req.file is undefined');
+      return res.status(400).json({ 
+        message: 'No image uploaded',
+        details: 'req.file is undefined. Check the FormData format and multer configuration.'
+      });
+    }
+    
+    console.log('File details:', {
+      filename: req.file.filename,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
+    
+    // Check if portfolio exists
+    let existingPortfolio = await req.prisma.portfolio.findUnique({
+      where: { artistId }
+    });
+    
+    console.log('Existing portfolio:', existingPortfolio);
+    
+    // Create a portfolio if it doesn't exist
+    if (!existingPortfolio) {
+      console.log('Creating new portfolio for artist:', artistId);
+      existingPortfolio = await req.prisma.portfolio.create({
+        data: {
+          artistId,
+          about: "",
+          styles: []
+        }
+      });
+      console.log('New portfolio created:', existingPortfolio);
+    }
+    
+    // Generate URL for the uploaded file
+    const relativePath = `/uploads/images/${req.file.filename}`;
+    console.log('Image path:', relativePath);
+    
+    // Add image to portfolio
+    const image = await req.prisma.tattooImage.create({
+      data: {
+        url: relativePath,
+        caption: caption || "",
+        portfolioId: existingPortfolio.id
+      }
+    });
+    
+    console.log('Image added:', image);
+    
+    // Return the image URL in the format expected by the frontend
+    res.status(201).json({ 
+      imageUrl: relativePath,
+      id: image.id,
+      caption: image.caption
+    });
+  } catch (error) {
+    console.error('Add image error:', error);
+    res.status(500).json({ 
+      message: 'Failed to add image',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+/**
+ * Get the authenticated user's portfolio
+ */
+const getMyPortfolio = async (req, res) => {
+  try {
+    console.log('Getting portfolio for authenticated user:', req.user.id);
+    
+    const artistId = req.user.id;
+    
+    // Check if portfolio exists
+    let portfolio = await req.prisma.portfolio.findUnique({
+      where: { artistId },
+      include: {
+        artist: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            bio: true,
+            location: true,
+            avatarUrl: true
+          }
+        },
+        images: true
+      }
+    });
+    
+    // If no portfolio exists yet, create an empty one
+    if (!portfolio) {
+      console.log('No portfolio found, creating empty portfolio for artist:', artistId);
+      portfolio = await req.prisma.portfolio.create({
+        data: {
+          artistId,
+          about: "",
+          styles: []
+        },
+        include: {
+          artist: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              bio: true,
+              location: true,
+              avatarUrl: true
+            }
+          },
+          images: true
+        }
+      });
+    }
+    
+    // Transform the data to match the frontend's expected format for portfolio items
+    const portfolioItems = portfolio.images.map(image => ({
+      id: image.id,
+      imageUrl: image.url,
+      caption: image.caption
+    }));
+    
+    console.log(`Returning ${portfolioItems.length} portfolio items`);
+    
+    res.json(portfolioItems);
+  } catch (error) {
+    console.error('Get my portfolio error:', error);
+    res.status(500).json({ message: 'Failed to get portfolio', error: error.message });
+  }
+};
+
+/**
+ * Delete an item from the current user's portfolio
+ */
+const deleteMyPortfolioItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const artistId = req.user.id;
+    
+    console.log(`Deleting portfolio item ${id} for artist ${artistId}`);
+    
+    // Find the image to verify ownership
+    const image = await req.prisma.tattooImage.findFirst({
+      where: {
+        id,
+        portfolio: {
+          artistId
+        }
+      }
+    });
+    
+    if (!image) {
+      return res.status(404).json({ 
+        message: 'Image not found or not in your portfolio',
+        details: `Item with ID ${id} not found or does not belong to your portfolio`
+      });
+    }
+    
+    // Delete the file from the filesystem if it exists
+    if (image.url && image.url.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, '../../', image.url);
+      console.log('Deleting file:', filePath);
+      
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log('File deleted successfully');
+      } else {
+        console.log('File not found on disk');
+      }
+    }
+    
+    // Delete the image from the database
+    await req.prisma.tattooImage.delete({
+      where: { id }
+    });
+    
+    console.log('Image deleted successfully from database');
+    
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Delete portfolio item error:', error);
+    res.status(500).json({ 
+      message: 'Failed to delete portfolio item',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllPortfolios,
   getPortfolioByArtistId,
   createOrUpdatePortfolio,
   addImageToPortfolio,
-  deleteImageFromPortfolio
+  deleteImageFromPortfolio,
+  addMyPortfolioImage,
+  getMyPortfolio,
+  deleteMyPortfolioItem
 }; 

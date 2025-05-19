@@ -225,10 +225,99 @@ const deleteUser = async (req, res) => {
   }
 };
 
+/**
+ * Update own profile (PATCH /profile)
+ */
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, bio, location, experience, hourlyRate, specialties, styles } = req.body;
+    const updateData = { name, bio, location };
+    
+    if (req.user.isArtist) {
+      if (experience !== undefined) updateData.experience = experience;
+      if (hourlyRate !== undefined) updateData.hourlyRate = hourlyRate;
+      if (specialties !== undefined) updateData.specialties = specialties;
+      if (styles !== undefined) updateData.styles = styles;
+    }
+    
+    // Remove undefined fields
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+    const updatedUser = await req.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isArtist: true,
+        bio: true,
+        location: true,
+        avatarUrl: true,
+        experience: true,
+        hourlyRate: true,
+        specialties: true,
+        styles: true,
+        createdAt: true
+      }
+    });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ message: 'Failed to update profile', error: error.message });
+  }
+};
+
+/**
+ * Get featured artists for home screen
+ */
+const getFeaturedArtists = async (req, res) => {
+  try {
+    const { limit = 5 } = req.query;
+    
+    // Get artists with the isArtist flag, limited by query param
+    const artists = await req.prisma.user.findMany({
+      where: { 
+        isArtist: true 
+      },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        bio: true,
+        avatarUrl: true,
+        specialties: true,
+        styles: true,
+        experience: true,
+        hourlyRate: true
+      },
+      take: parseInt(limit),
+      orderBy: [
+        { experience: 'desc' }, // More experienced artists first
+        { createdAt: 'desc' }   // Then newer profiles
+      ]
+    });
+    
+    // Enhance with fake ratings for now (in a real app, this would come from reviews)
+    const enhancedArtists = artists.map(artist => ({
+      ...artist,
+      rating: Math.floor(Math.random() * 2) + 4, // Random rating between 4-5
+      reviewCount: Math.floor(Math.random() * 50) + 5 // Random number of reviews
+    }));
+    
+    res.json(enhancedArtists);
+  } catch (error) {
+    console.error('Get featured artists error:', error);
+    res.status(500).json({ message: 'Failed to get featured artists', error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   updateUser,
   uploadAvatar,
-  deleteUser
+  deleteUser,
+  getFeaturedArtists,
+  updateProfile,
 }; 

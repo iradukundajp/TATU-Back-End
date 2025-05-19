@@ -28,7 +28,12 @@ model User {
   artistBookings Booking[] @relation("ArtistBookings")
   reviews     Review[] @relation("UserReviews")
   artistReviews Review[] @relation("ArtistReviews")
+  tattooDesigns TattooDesign[] // Added relation to tattoo designs
   createdAt   DateTime @default(now())
+  experience  Int?     // Years of experience (artist only)
+  hourlyRate  Int?     // Hourly rate in local currency (artist only)
+  specialties String[] // Artist specialties (artist only)
+  styles      String[] // Tattoo styles offered (artist only)
 }
 
 model Portfolio {
@@ -68,4 +73,21 @@ model Review {
   createdAt DateTime @default(now())
   user      User     @relation("UserReviews", fields: [userId], references: [id])
   artist    User     @relation("ArtistReviews", fields: [artistId], references: [id])
+}
+
+// New model for tattoo designs that artists can offer to clients
+model TattooDesign {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  price       Float?
+  size        String?  // e.g., "small", "medium", "large" or dimensions
+  style       String   // e.g., "traditional", "realism", "blackwork"
+  categories  String[] // For additional categorization
+  artistId    String
+  artist      User     @relation(fields: [artistId], references: [id])
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

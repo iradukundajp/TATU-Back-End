@@ -19,7 +19,7 @@ const imageStorage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const extension = path.extname(file.originalname);
+    const extension = path.extname(file.originalname) || '.jpg'; // Default to jpg if no extension
     cb(null, uniquePrefix + extension);
   }
 });
@@ -35,27 +35,28 @@ const avatarStorage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const extension = path.extname(file.originalname);
+    const extension = path.extname(file.originalname) || '.jpg'; // Default to jpg if no extension
     cb(null, uniquePrefix + extension);
   }
 });
 
 // File filter function
 const imageFilter = (req, file, cb) => {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+  console.log('Received file in multer:', file);
   
-  if (allowedTypes.includes(file.mimetype)) {
+  // Allow all image types for now, we'll validate format later if needed
+  if (file.mimetype.startsWith('image/') || file.mimetype === 'application/octet-stream') {
     cb(null, true);
   } else {
-    cb(new Error('Not an allowed image type. Please upload JPEG, JPG, PNG, or GIF.'), false);
+    cb(new Error(`Not an allowed image type: ${file.mimetype}. Please upload a valid image.`), false);
   }
 };
 
-// Setup multer for image uploads
+// Setup multer for image uploads with better logging
 const uploadImage = multer({ 
   storage: imageStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max file size
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
   },
   fileFilter: imageFilter
 });

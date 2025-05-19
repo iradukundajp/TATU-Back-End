@@ -12,6 +12,7 @@ const userRoutes = require('./routes/user.routes');
 const portfolioRoutes = require('./routes/portfolio.routes');
 const bookingRoutes = require('./routes/booking.routes');
 const reviewRoutes = require('./routes/review.routes');
+const tattooRoutes = require('./routes/tattoo.routes');
 
 // Initialize Express app
 const app = express();
@@ -54,9 +55,68 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
+// CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      // Local development
+      'http://localhost:3000',
+      'http://localhost:8000',
+      'http://localhost:8081',
+      'http://localhost:19000',
+      'http://localhost:19006',
+      // Expo development
+      'http://127.0.0.1:19000',
+      'http://127.0.0.1:19006',
+      'exp://',
+      // Allow all Expo development client URLs (they have dynamic IPs)
+      /^exp:\/\/.*$/,
+      /^https:\/\/.*\.expo\.dev$/,
+      /^https:\/\/.*\.expo\.io$/,
+      // Add frontend production URL when available
+      // 'https://your-frontend-url.com'
+    ];
+
+    // Check if the origin is allowed
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return allowedOrigin === origin;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors(corsOptions));
+
+// Use json parser only for non-multipart requests
+app.use((req, res, next) => {
+  if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+    // Skip json parsing for multipart/form-data
+    console.log('Skipping JSON body parser for multipart request');
+    next();
+  } else {
+    // Use JSON parser for regular requests
+    express.json()(req, res, next);
+  }
+});
+
+// Important: Don't use express.json() middleware for multipart/form-data routes
+// The multer middleware will handle that
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -73,9 +133,10 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/portfolios', portfolioRoutes);
+app.use('/api/portfolio', portfolioRoutes); // Changed from portfolios to portfolio to match frontend
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/tattoos', tattooRoutes);
 
 // Root route
 app.get('/', (req, res) => {

@@ -29,9 +29,31 @@ const authenticate = (req, res, next) => {
  * Middleware to check if user is an artist
  */
 const requireArtist = (req, res, next) => {
-  if (!req.user || !req.user.isArtist) {
-    return res.status(403).json({ message: 'Artist access required' });
+  console.log('User data in requireArtist middleware:', req.user);
+  
+  if (!req.user) {
+    return res.status(403).json({ message: 'Authentication required' });
   }
+  
+  if (!req.user.isArtist) {
+    return res.status(403).json({ 
+      message: 'Artist access required',
+      user: req.user.id,
+      isArtist: req.user.isArtist
+    });
+  }
+  
+  next();
+};
+
+/**
+ * Middleware to conditionally apply artist requirement
+ * For routes that need to work for both artists and regular users
+ * But may have different behavior depending on the role
+ */
+const checkArtistRole = (req, res, next) => {
+  // This middleware doesn't block access, it just adds a helpful flag
+  req.isArtistRequest = !!(req.user && req.user.isArtist);
   next();
 };
 
@@ -51,5 +73,6 @@ const requireOwnership = (idField) => (req, res, next) => {
 module.exports = {
   authenticate,
   requireArtist,
+  checkArtistRole,
   requireOwnership
 }; 
