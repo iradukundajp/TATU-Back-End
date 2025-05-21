@@ -34,6 +34,7 @@ model User {
   hourlyRate  Int?     // Hourly rate in local currency (artist only)
   specialties String[] // Artist specialties (artist only)
   styles      String[] // Tattoo styles offered (artist only)
+  avatarConfiguration Json? @map("avatar_configuration") // New field for avatar customization
 }
 
 model Portfolio {
