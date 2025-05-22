@@ -19,4 +19,7 @@ router.post('/:id/avatar', authenticate, uploadAvatar.single('avatar'), userCont
 // PATCH /profile (update own profile)
 router.patch('/profile', authenticate, userController.updateProfile);
 
-module.exports = router; 
+// PUT /profile/avatar-configuration (update avatar configuration for own profile)
+router.put('/profile/avatar-configuration', authenticate, userController.updateAvatarConfiguration);
+
+module.exports = router;

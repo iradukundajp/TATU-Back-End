@@ -75,6 +75,7 @@ const getProfile = async (req, res) => {
         bio: true,
         location: true,
         avatarUrl: true,
+        avatarConfiguration: true, // Added this line
         createdAt: true
       }
     });
@@ -94,4 +95,4 @@ module.exports = {
   register,
   login,
   getProfile
-}; 
+};

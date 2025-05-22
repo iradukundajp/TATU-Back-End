@@ -312,6 +312,51 @@ const getFeaturedArtists = async (req, res) => {
   }
 };
 
+/**
+ * Update user's avatar configuration
+ */
+const updateAvatarConfiguration = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get userId from authenticated user
+    const config = req.body;
+
+    // Validate the incoming configuration (basic validation)
+    if (!config || typeof config.baseMannequinId !== 'string') {
+      return res.status(400).json({ message: 'Invalid avatar configuration data' });
+    }
+
+    const updatedUser = await req.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        avatarConfiguration: config 
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isArtist: true,
+        bio: true,
+        location: true,
+        avatarUrl: true,
+        avatarConfiguration: true, // Ensure this is selected
+        experience: true,
+        hourlyRate: true,
+        specialties: true,
+        styles: true,
+        createdAt: true
+      }
+    });
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating avatar configuration:', error);
+    // Check for specific Prisma errors if needed, e.g., P2025 (Record to update not found)
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(500).json({ message: 'Failed to update avatar configuration', error: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -320,4 +365,5 @@ module.exports = {
   deleteUser,
   getFeaturedArtists,
   updateProfile,
-}; 
+  updateAvatarConfiguration, // Added this line
+};

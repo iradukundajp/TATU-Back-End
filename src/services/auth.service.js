@@ -71,6 +71,10 @@ const register = async (userData) => {
       name: true,
       email: true,
       isArtist: true,
+      bio: true,             // Added
+      location: true,        // Added
+      avatarUrl: true,       // Added
+      avatarConfiguration: true, // Added
       createdAt: true
     }
   });
@@ -84,7 +88,20 @@ const register = async (userData) => {
  */
 const login = async (email, password) => {
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
+    // Select all necessary fields, similar to getProfile
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isArtist: true,
+      bio: true,
+      location: true,
+      avatarUrl: true,
+      avatarConfiguration: true,
+      createdAt: true,
+      password: true // Still need password for comparison
+    }
   });
   
   if (!user) {
@@ -97,15 +114,12 @@ const login = async (email, password) => {
     return null;
   }
   
-  const token = generateToken(user);
+  // eslint-disable-next-line no-unused-vars
+  const { password: _, ...userWithoutPassword } = user; // Exclude password from returned object
+  const token = generateToken(userWithoutPassword);
   
   return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      isArtist: user.isArtist
-    },
+    user: userWithoutPassword, // Return the more complete user object
     token
   };
 };
@@ -117,4 +131,4 @@ module.exports = {
   verifyToken,
   register,
   login
-}; 
+};
