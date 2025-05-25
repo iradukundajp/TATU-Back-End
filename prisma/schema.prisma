@@ -29,6 +29,13 @@ model User {
   reviews     Review[] @relation("UserReviews")
   artistReviews Review[] @relation("ArtistReviews")
   tattooDesigns TattooDesign[] // Added relation to tattoo designs
+  
+  // Messaging relations
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  conversations1   Conversation[] @relation("User1Conversations")
+  conversations2   Conversation[] @relation("User2Conversations")
+  
   createdAt   DateTime @default(now())
   experience  Int?     // Years of experience (artist only)
   hourlyRate  Int?     // Hourly rate in local currency (artist only)
@@ -91,4 +98,36 @@ model TattooDesign {
   isAvailable Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// New models for messaging system
+model Conversation {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  user1     User     @relation("User1Conversations", fields: [user1Id], references: [id])
+  user2     User     @relation("User2Conversations", fields: [user2Id], references: [id])
+  messages  Message[]
+  lastMessageAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  receiverId     String
+  content        String
+  messageType    String       @default("text") // text, image, booking_request
+  isRead         Boolean      @default(false)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  createdAt      DateTime     @default(now())
+  
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
 }

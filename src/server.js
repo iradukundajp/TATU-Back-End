@@ -13,6 +13,7 @@ const portfolioRoutes = require('./routes/portfolio.routes');
 const bookingRoutes = require('./routes/booking.routes');
 const reviewRoutes = require('./routes/review.routes');
 const tattooRoutes = require('./routes/tattoo.routes');
+const messageRoutes = require('./routes/message.routes');
 
 // Initialize Express app
 const app = express();
@@ -137,6 +138,7 @@ app.use('/api/portfolio', portfolioRoutes); // Changed from portfolios to portfo
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/tattoos', tattooRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Root route
 app.get('/', (req, res) => {
