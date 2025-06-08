@@ -5,6 +5,7 @@ const path = require('path');
 const { PrismaClient } = require('./generated/prisma');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+const imagekit = require('./config/imagekit'); // Added ImageKit initialization
 
 // Routes import
 const authRoutes = require('./routes/auth.routes');

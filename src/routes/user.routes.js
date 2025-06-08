@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
 const { authenticate, requireOwnership } = require('../middlewares/auth.middleware');
-const { uploadAvatar } = require('../utils/upload');
+const { uploadAvatar, uploadCustomTattoo } = require('../utils/upload');
 
 // Public routes
 router.get('/', userController.getAllUsers);
@@ -21,5 +21,8 @@ router.patch('/profile', authenticate, userController.updateProfile);
 
 // PUT /profile/avatar-configuration (update avatar configuration for own profile)
 router.put('/profile/avatar-configuration', authenticate, userController.updateAvatarConfiguration);
+
+// POST /profile/custom-tattoo (upload a custom tattoo image for the authenticated user)
+router.post('/profile/custom-tattoo', authenticate, uploadCustomTattoo.single('tattooImage'), userController.uploadCustomTattooImage);
 
 module.exports = router;
