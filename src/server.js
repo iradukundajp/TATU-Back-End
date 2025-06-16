@@ -6,6 +6,7 @@ const { PrismaClient } = require('./generated/prisma');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const http = require('http');
+const imagekit = require('./config/imagekit'); // Added ImageKit initialization
 
 // Import WebSocket service
 const webSocketService = require('../services/websocket.service');

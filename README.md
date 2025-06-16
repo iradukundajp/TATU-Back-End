@@ -36,6 +36,7 @@ Backend API for TATU - a tattooing service platform that connects tattoo artists
 2. Install dependencies:
    ```
    npm install
+   npm install imagekit dotenv
    ```
 
 3. Set up environment variables:
@@ -44,6 +45,10 @@ Backend API for TATU - a tattooing service platform that connects tattoo artists
    DATABASE_URL="postgresql://username:password@localhost:5432/tatu_db"
    JWT_SECRET="your-secret-key"
    PORT=5000
+
+   IMAGEKIT_PUBLIC_KEY="your_imagekit_public_key"
+   IMAGEKIT_PRIVATE_KEY="your_imagekit_private_key"
+   IMAGEKIT_URL_ENDPOINT="your_imagekit_url_endpoint"
    ```
    
 4. Run database migrations:

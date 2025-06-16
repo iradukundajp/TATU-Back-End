@@ -1,18 +1,26 @@
 const { hashPassword } = require('../services/auth.service');
 const fs = require('fs');
 const path = require('path');
+const imagekit = require('../config/imagekit'); // Import ImageKit instance
 
 /**
  * Get all users (with pagination)
  */
 const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, isArtist } = req.query;
+    const { page = 1, limit = 10, isArtist, search } = req.query; // Added search
     const skip = (page - 1) * limit;
     
     const where = {};
     if (isArtist !== undefined) {
       where.isArtist = isArtist === 'true';
+    }
+
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive', // Case-insensitive search
+      };
     }
     
     const users = await req.prisma.user.findMany({
@@ -25,7 +33,12 @@ const getAllUsers = async (req, res) => {
         bio: true,
         location: true,
         avatarUrl: true,
+        specialties: true, 
+        styles: true,      
+        experience: true, 
+        hourlyRate: true,
         createdAt: true
+        // Note: rating and reviewCount are handled by a separate call in ArtistCard
       },
       skip,
       take: parseInt(limit)
@@ -258,6 +271,7 @@ const updateProfile = async (req, res) => {
         hourlyRate: true,
         specialties: true,
         styles: true,
+        avatarConfiguration: true, // Ensure this line is present
         createdAt: true
       }
     });
@@ -313,23 +327,27 @@ const getFeaturedArtists = async (req, res) => {
 };
 
 /**
- * Update user's avatar configuration
+ * Update avatar configuration for the authenticated user
  */
 const updateAvatarConfiguration = async (req, res) => {
   try {
-    const userId = req.user.id; // Get userId from authenticated user
-    const config = req.body;
+    const userId = req.user.id;
+    const { baseMannequinId, tattoos } = req.body;
 
-    // Validate the incoming configuration (basic validation)
-    if (!config || typeof config.baseMannequinId !== 'string') {
+    // Basic validation
+    if (!baseMannequinId || !Array.isArray(tattoos)) {
       return res.status(400).json({ message: 'Invalid avatar configuration data' });
     }
 
     const updatedUser = await req.prisma.user.update({
       where: { id: userId },
-      data: { 
-        avatarConfiguration: config 
+      data: {
+        avatarConfiguration: {
+          baseMannequinId,
+          tattoos,
+        },
       },
+      // Select all relevant user fields to return the full user object
       select: {
         id: true,
         name: true,
@@ -338,24 +356,62 @@ const updateAvatarConfiguration = async (req, res) => {
         bio: true,
         location: true,
         avatarUrl: true,
-        avatarConfiguration: true, // Ensure this is selected
         experience: true,
         hourlyRate: true,
         specialties: true,
         styles: true,
-        createdAt: true
-      }
+        createdAt: true,
+        avatarConfiguration: true, // Ensure this is also selected
+        // Add any other fields that are part of your User model and needed by the frontend
+      },
     });
-    res.json(updatedUser);
+
+    res.json(updatedUser); // Return the full updated user object
   } catch (error) {
-    console.error('Error updating avatar configuration:', error);
-    // Check for specific Prisma errors if needed, e.g., P2025 (Record to update not found)
-    if (error.code === 'P2025') {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    console.error('Update avatar configuration error:', error);
     res.status(500).json({ message: 'Failed to update avatar configuration', error: error.message });
   }
 };
+
+/**
+ * Upload a custom tattoo image for the authenticated user
+ */
+const uploadCustomTattooImage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No tattoo image uploaded' });
+    }
+
+    // Upload to ImageKit
+    const imageKitResponse = await imagekit.upload({
+      file: req.file.buffer, // File buffer from multer memoryStorage
+      fileName: req.file.originalname, // Use original filename or generate a unique one
+      folder: `custom_tattoos/${userId}`,
+      useUniqueFileName: true, // ImageKit will generate a unique name
+    });
+
+    // Respond with the ImageKit URL
+    res.json({ 
+      message: 'Custom tattoo uploaded successfully to ImageKit', 
+      filePath: imageKitResponse.url, // URL from ImageKit
+      fileId: imageKitResponse.fileId, // ImageKit file ID
+      name: imageKitResponse.name // ImageKit filename
+    });
+
+  } catch (error) {
+    console.error('Upload custom tattoo image error:', error);
+    if (error.name === 'ImageKitError') {
+      return res.status(500).json({ message: 'Failed to upload to ImageKit', error: error.message, details: error.help });
+    }
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File too large. Maximum size is 5MB.' });
+    }
+    res.status(500).json({ message: 'Failed to upload custom tattoo image', error: error.message });
+  }
+};
+
 
 module.exports = {
   getAllUsers,
@@ -365,5 +421,6 @@ module.exports = {
   deleteUser,
   getFeaturedArtists,
   updateProfile,
-  updateAvatarConfiguration, // Added this line
+  updateAvatarConfiguration,
+  uploadCustomTattooImage, // Add the new function here
 };
