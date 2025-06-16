@@ -5,6 +5,10 @@ const path = require('path');
 const { PrismaClient } = require('./generated/prisma');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+const http = require('http');
+
+// Import WebSocket service
+const webSocketService = require('../services/websocket.service');
 
 // Routes import
 const authRoutes = require('./routes/auth.routes');
@@ -155,9 +159,15 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Initialize WebSocket service
+webSocketService.initialize(server);
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+  console.log(`Server accessible from network at http://192.168.129.3:${PORT}`);
 });
 
 // Handle graceful shutdown

@@ -64,6 +64,27 @@ async function getOrCreateConversation(user1Id, user2Id) {
 }
 
 /**
+ * Get a conversation by ID
+ * @param {string} conversationId - Conversation ID
+ * @returns {Promise<object>} - Conversation object
+ */
+async function getConversationById(conversationId) {
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: conversationId },
+    include: {
+      user1: {
+        select: { id: true, name: true, avatarUrl: true, isArtist: true }
+      },
+      user2: {
+        select: { id: true, name: true, avatarUrl: true, isArtist: true }
+      }
+    }
+  });
+
+  return conversation;
+}
+
+/**
  * Get all conversations for a user
  * @param {string} userId - User ID
  * @returns {Promise<Array>} - Array of conversations
@@ -217,7 +238,12 @@ async function sendMessage(messageData) {
     data: { lastMessageAt: new Date() }
   });
 
-  return message;
+  return {
+    message,
+    conversationId: conversation.id,
+    senderId,
+    receiverId
+  };
 }
 
 /**
@@ -238,7 +264,11 @@ async function markMessagesAsRead(conversationId, userId) {
     }
   });
 
-  return result.count;
+  return {
+    count: result.count,
+    conversationId,
+    userId
+  };
 }
 
 /**
@@ -284,6 +314,7 @@ async function deleteMessage(messageId, userId) {
 
 module.exports = {
   getOrCreateConversation,
+  getConversationById,
   getUserConversations,
   getConversationMessages,
   sendMessage,
