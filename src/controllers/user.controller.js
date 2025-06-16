@@ -8,12 +8,19 @@ const imagekit = require('../config/imagekit'); // Import ImageKit instance
  */
 const getAllUsers = async (req, res) => {
   try {
-    const { page = 1, limit = 10, isArtist } = req.query;
+    const { page = 1, limit = 10, isArtist, search } = req.query; // Added search
     const skip = (page - 1) * limit;
     
     const where = {};
     if (isArtist !== undefined) {
       where.isArtist = isArtist === 'true';
+    }
+
+    if (search) {
+      where.name = {
+        contains: search,
+        mode: 'insensitive', // Case-insensitive search
+      };
     }
     
     const users = await req.prisma.user.findMany({
@@ -26,7 +33,12 @@ const getAllUsers = async (req, res) => {
         bio: true,
         location: true,
         avatarUrl: true,
+        specialties: true, 
+        styles: true,      
+        experience: true, 
+        hourlyRate: true,
         createdAt: true
+        // Note: rating and reviewCount are handled by a separate call in ArtistCard
       },
       skip,
       take: parseInt(limit)
@@ -259,6 +271,7 @@ const updateProfile = async (req, res) => {
         hourlyRate: true,
         specialties: true,
         styles: true,
+        avatarConfiguration: true, // Ensure this line is present
         createdAt: true
       }
     });
