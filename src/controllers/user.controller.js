@@ -33,6 +33,7 @@ const getAllUsers = async (req, res) => {
         bio: true,
         location: true,
         avatarUrl: true,
+        avatarConfiguration: true, // <<< ADDED THIS LINE
         specialties: true, 
         styles: true,      
         experience: true, 
@@ -73,11 +74,16 @@ const getUserById = async (req, res) => {
       select: {
         id: true,
         name: true,
-        email: true,
+        email: true, // Consider if email should be public
         isArtist: true,
         bio: true,
         location: true,
         avatarUrl: true,
+        specialties: true, // Added
+        styles: true,      // Added
+        experience: true,  // Added
+        hourlyRate: true,  // Added
+        avatarConfiguration: true, // Added (useful if displaying configured avatar)
         createdAt: true,
         portfolio: {
           include: {
@@ -300,10 +306,12 @@ const getFeaturedArtists = async (req, res) => {
         location: true,
         bio: true,
         avatarUrl: true,
+        avatarConfiguration: true, // <<< ADDED THIS LINE
         specialties: true,
         styles: true,
         experience: true,
-        hourlyRate: true
+        hourlyRate: true, // <<< ADDED COMMA HERE
+        // rating and reviewCount are added manually below for now
       },
       take: parseInt(limit),
       orderBy: [

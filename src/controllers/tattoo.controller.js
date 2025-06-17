@@ -9,20 +9,36 @@ const getAllTattooDesigns = async (req, res) => {
     const { 
       page = 1, 
       limit = 10, 
-      style, 
       minPrice, 
       maxPrice, 
       size, 
-      categories 
+      categories,
+      search, // For general text search
+      styles  // For filtering by a list of styles (e.g., "Traditional,Watercolor")
     } = req.query;
     
     const skip = (page - 1) * parseInt(limit);
     
     // Build the filter object
     let where = { isAvailable: true };
+
+    // Text search (on title and description)
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+        // Optional: if you want the general search to also check the style field:
+        // { style: { contains: search, mode: 'insensitive' } }
+      ];
+    }
     
-    if (style) {
-      where.style = style;
+    // Multi-style filter (replaces the old singular style filter)
+    if (styles) {
+      const styleList = styles.split(',').map(s => s.trim()).filter(s => s); // Filter out empty strings
+      if (styleList.length > 0) {
+        // This condition is ANDed with other top-level conditions in 'where'
+        where.style = { in: styleList };
+      }
     }
     
     if (minPrice || maxPrice) {
@@ -356,4 +372,4 @@ module.exports = {
   updateTattooDesign,
   deleteTattooDesign,
   getMyTattooDesigns
-}; 
+};
