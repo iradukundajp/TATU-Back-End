@@ -28,7 +28,17 @@ const getUserBookings = async (req, res) => {
     });
     
     console.log('User bookings with aftercare:', JSON.stringify(bookings, null, 2));
-    res.json(bookings);
+    
+    // Map artist and user names/avatars to Booking object for frontend
+    const bookingsWithNames = bookings.map(b => ({
+      ...b,
+      artistName: b.artist?.name || '',
+      artistAvatar: b.artist?.avatarUrl || '',
+      clientName: b.user?.name || '',
+      clientAvatar: b.user?.avatarUrl || '',
+      duration: b.duration || 0
+    }));
+    res.json(bookingsWithNames);
   } catch (error) {
     console.error('Get user bookings error:', error);
     res.status(500).json({ message: 'Failed to get bookings', error: error.message });
@@ -66,7 +76,16 @@ const getArtistBookings = async (req, res) => {
       }
     });
     
-    res.json(bookings);
+    // Map artist and user names/avatars to Booking object for frontend
+    const bookingsWithNames = bookings.map(b => ({
+      ...b,
+      artistName: b.artist?.name || '',
+      artistAvatar: b.artist?.avatarUrl || '',
+      clientName: b.user?.name || '',
+      clientAvatar: b.user?.avatarUrl || '',
+      duration: b.duration || 0
+    }));
+    res.json(bookingsWithNames);
   } catch (error) {
     console.error('Get artist bookings error:', error);
     res.status(500).json({ message: 'Failed to get bookings', error: error.message });

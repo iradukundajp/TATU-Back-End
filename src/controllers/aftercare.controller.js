@@ -3,6 +3,7 @@ const path = require('path');
 const imagekit = require('../config/imagekit');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
+const messageService = require('../services/message.service');
 
 /**
  * Create aftercare for a booking (artist only, booking must be completed)
@@ -36,6 +37,19 @@ const createAftercare = async (req, res) => {
         bookingId: booking.id
       }
     });
+
+    // Send aftercare message to user
+    try {
+      await messageService.sendMessage({
+        senderId: artistId,
+        receiverId: booking.userId,
+        content: JSON.stringify({ bookingId: booking.id, aftercareId: aftercare.id }),
+        messageType: 'aftercare'
+      });
+    } catch (err) {
+      console.error('Failed to send aftercare message:', err);
+    }
+
     res.status(201).json(aftercare);
   } catch (error) {
     console.error('Create aftercare error:', error);
@@ -123,6 +137,19 @@ const updateAftercare = async (req, res) => {
         images,
       }
     });
+
+    // Send aftercare message to user
+    try {
+      await messageService.sendMessage({
+        senderId: artistId,
+        receiverId: booking.userId,
+        content: JSON.stringify({ bookingId: booking.id, aftercareId: aftercare.id }),
+        messageType: 'aftercare'
+      });
+    } catch (err) {
+      console.error('Failed to send aftercare message:', err);
+    }
+
     res.json(aftercare);
   } catch (error) {
     console.error('Update aftercare error:', error);
