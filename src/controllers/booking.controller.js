@@ -3,6 +3,7 @@
  */
 const getUserBookings = async (req, res) => {
   try {
+    console.log('HIT /api/bookings/user');
     const userId = req.user.id;
     
     const bookings = await req.prisma.booking.findMany({
@@ -18,13 +19,15 @@ const getUserBookings = async (req, res) => {
             location: true,
             avatarUrl: true
           }
-        }
+        },
+        aftercare: true // <-- include aftercare relation
       },
       orderBy: {
         date: 'asc'
       }
     });
     
+    console.log('User bookings with aftercare:', JSON.stringify(bookings, null, 2));
     res.json(bookings);
   } catch (error) {
     console.error('Get user bookings error:', error);
@@ -210,4 +213,4 @@ module.exports = {
   createBooking,
   updateBookingStatus,
   cancelBooking
-}; 
+};

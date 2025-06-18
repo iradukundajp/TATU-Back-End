@@ -62,14 +62,15 @@ model TattooImage {
 }
 
 model Booking {
-  id         String   @id @default(cuid())
-  userId     String
-  artistId   String
-  date       DateTime
-  status     String   // e.g., pending, confirmed, completed
-  note       String?
-  user       User     @relation("UserBookings", fields: [userId], references: [id])
-  artist     User     @relation("ArtistBookings", fields: [artistId], references: [id])
+  id          String     @id @default(cuid())
+  userId      String
+  artistId    String
+  date        DateTime
+  status      String
+  note        String?
+  user        User       @relation("UserBookings", fields: [userId], references: [id])
+  artist      User       @relation("ArtistBookings", fields: [artistId], references: [id])
+  aftercare   Aftercare?
 }
 
 model Review {
@@ -130,4 +131,13 @@ model Message {
   @@index([conversationId])
   @@index([senderId])
   @@index([receiverId])
+}
+
+model Aftercare {
+  id          String   @id @default(cuid())
+  images      String[] // URLs of product images
+  description String
+  artistId    String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  bookingId   String   @unique
 }

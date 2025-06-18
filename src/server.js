@@ -19,6 +19,7 @@ const bookingRoutes = require('./routes/booking.routes');
 const reviewRoutes = require('./routes/review.routes');
 const tattooRoutes = require('./routes/tattoo.routes');
 const messageRoutes = require('./routes/message.routes');
+const aftercareRoutes = require('./routes/aftercare.routes'); // Import aftercare routes
 
 // Initialize Express app
 const app = express();
@@ -144,6 +145,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/tattoos', tattooRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api', aftercareRoutes); // Add aftercare routes
 
 // Root route
 app.get('/', (req, res) => {
